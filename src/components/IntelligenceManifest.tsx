@@ -164,7 +164,7 @@ export default function IntelligenceManifest() {
       IDs should be sanitized versions of the asset names.`;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-1.5-flash',
+        model: 'gemini-3-flash-preview',
         contents: prompt,
         config: {
           responseMimeType: 'application/json',
@@ -220,16 +220,27 @@ export default function IntelligenceManifest() {
       if (!apiKey) throw new Error("GEMINI_API_KEY environment variable is required.");
       
       const ai = new GoogleGenAI({ apiKey });
-      const prompt = `System Name: ${target.systemName}\nDomain: ${target.ownerDomain}\nTraining Sources: ${target.trainingSources.join(', ')}\nTraining Runs: ${target.trainingRuns.join(', ')}\nBusiness Rules: ${target.businessRules.join(', ')}\n\nAnalyze the intelligence assets above and write a highly technical, 2-to-3 sentence summary of this autonomous system's purpose. You must explicitly focus on its operational purview, technical capabilities, and rigid constraints required for compliance due diligence. Use cold, factual language. Avoid any generic filler or introductory phrases like "This system is designed to..." or "The purpose of this system is...". Start directly with the technical scope.`;
+      const prompt = `System Name: ${target.systemName}
+Domain: ${target.ownerDomain}
+Training Sources: ${target.trainingSources.join(', ') || 'None specified'}
+Training Runs: ${target.trainingRuns.join(', ') || 'None specified'}
+Business Rules: ${target.businessRules.join(', ') || 'None specified'}
+
+Task: Generate a concise, highly technical system purpose statement.
+Focus: Operational purview, technical capabilities, and rigid constraints.
+Style: Cold, factual, technical. No filler or introductory phrases.
+Length: Max 250 characters.
+
+Example: "Autonomous risk-scoring engine utilizing real-time SWIFT transaction telemetry to enforce geofencing constraints and AES-256 data encryption protocols within global financial jurisdictions."`;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-1.5-flash',
+        model: 'gemini-3-flash-preview',
         contents: prompt
       });
       
-      const maskedPurpose = selectedManifest.systemName === 'Retail_Customer_Predictor' 
-        ? maskPII(response.text) 
-        : response.text;
+      const maskedPurpose = selectedManifest?.systemName === 'Retail_Customer_Predictor' 
+        ? maskPII(response.text || '') 
+        : (response.text || '');
 
       setManifests(prev => prev.map(m => m.id === manifestId ? { ...m, systemPurpose: maskedPurpose } : m));
     } catch (error) {
@@ -280,7 +291,7 @@ export default function IntelligenceManifest() {
       Return ONLY a JSON array of conflict objects.`;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-1.5-flash',
+        model: 'gemini-3-flash-preview',
         contents: prompt,
         config: {
           responseMimeType: 'application/json',
@@ -419,7 +430,7 @@ export default function IntelligenceManifest() {
         Return ONLY valid JSON.`;
 
         const response = await ai.models.generateContent({
-          model: 'gemini-1.5-flash',
+          model: 'gemini-3-flash-preview',
           contents: prompt,
           config: {
             responseMimeType: 'application/json',
