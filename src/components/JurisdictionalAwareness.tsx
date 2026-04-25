@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Globe, ShieldAlert, ShieldCheck, Tag, MapPin, Server } from 'lucide-react';
 
 type Region = 'US' | 'EU' | 'CN' | 'UK';
-type SovereigntyTag = 'GDPR' | 'PIPL' | 'HIPAA' | 'CCPA' | 'UK-GDPR';
+type SovereigntyTag = 'GDPR' | 'PIPL' | 'HIPAA' | 'CCPA' | 'UK-GDPR' | 'EU-AI-Act';
 
 interface DataAsset {
   id: string;
@@ -24,12 +24,14 @@ const TAG_REQUIREMENTS: Record<SovereigntyTag, Region[]> = {
   'HIPAA': ['US'],
   'CCPA': ['US'],
   'UK-GDPR': ['UK'],
+  'EU-AI-Act': ['EU'],
 };
 
 const INITIAL_ASSETS: DataAsset[] = [
   { id: '1', name: 'Global Customer Profiles', description: 'Aggregated user data from EU and US markets.', tags: ['GDPR', 'CCPA'] },
   { id: '2', name: 'Shanghai Operations Logs', description: 'Telemetry and user activity from mainland China.', tags: ['PIPL'] },
   { id: '3', name: 'US Healthcare Records', description: 'Anonymized patient outcomes and billing data.', tags: ['HIPAA'] },
+  { id: '4', name: 'High-Risk AI Scoring Model Weights', description: 'Core neural network weights subject to transparency reporting.', tags: ['EU-AI-Act'] },
 ];
 
 export default function JurisdictionalAwareness() {
