@@ -1,20 +1,34 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Intelligence Manifest Registry
 
-# Run and deploy your AI Studio app
+A production-grade platform for managing, attesting, and auditing autonomous agentic systems.
 
-This contains everything you need to run your app locally.
+## Core Features
 
-View your app in AI Studio: https://ai.studio/apps/161d15cc-2ce5-42a8-af22-9cb805f7d652
+- **Inventory Management**: Track training sources, runs, and business rules per agentic system.
+- **AI-Powered Synthesis**: Automatically generate technical system purposes using Gemini 1.5 Flash.
+- **Deep Compliance Analysis**:
+  - **Conflict Detection**: Identify logical contradictions between rules and training data.
+  - **Rule Ambiguity Filter**: Real-time analysis of business rules to ensure mathematical precision.
+- **Dependency Graph Visualization**:
+  - Multi-layout support (Hierarchical, Force-Directed, Radial, Grid).
+  - Built with D3.js for interactive topology exploration.
+- **DevSecOps Integration**:
+  - Native support for GitHub Actions and Jenkins.
+  - Automated attestation simulation via webhooks.
+- **Data Lineage**: Detailed audit trails for every training source from origin to ingestion.
 
-## Run Locally
+## Technical Stack
 
-**Prerequisites:**  Node.js
+- **Frontend**: React 18, Vite, Tailwind CSS.
+- **AI**: Google Gemini API (@google/genai).
+- **Visualization**: D3.js, Lucide React icons.
+- **Animations**: Motion (framer-motion).
 
+## Security & Compliance
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+- **Deterministic Attestation**: Generates SHA-256 state hashes for manifest snapshots.
+- **Immutable Audit Logs**: Tracks attestation signatures and timestamps.
+- **Conflict Resolution**: Integrated justification workflow for operational overrides.
+
+---
+*Built for Corporate Governance and AI Oversight.*
