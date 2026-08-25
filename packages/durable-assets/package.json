@@ -1,11 +1,11 @@
 {
   "name": "@loxihart/durable-assets",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.3.0",
   "type": "module",
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test src/reducer/promotion-reducer.test.ts src/persistence/file-event-store.test.ts src/durable-assets-v1-1.test.ts",
+    "test": "tsx --test src/reducer/promotion-reducer.test.ts src/persistence/file-event-store.test.ts src/durable-assets-v1-1.test.ts src/durable-assets-v1-2.test.ts",
     "check": "npm run typecheck && npm test"
   },
   "dependencies": {
