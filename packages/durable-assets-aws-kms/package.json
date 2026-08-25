@@ -1,0 +1,19 @@
+{
+  "name": "@loxihart/durable-assets-aws-kms",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test src/aws-kms-signer.test.ts",
+    "check": "npm run typecheck && npm test"
+  },
+  "dependencies": {
+    "@aws-sdk/client-kms": "3.1117.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "tsx": "^4.21.0",
+    "typescript": "~5.8.2"
+  }
+}
