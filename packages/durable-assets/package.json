@@ -1,14 +1,17 @@
 {
   "name": "@loxihart/durable-assets",
   "private": true,
-  "version": "0.3.0",
+  "version": "0.4.0",
   "type": "module",
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test src/reducer/promotion-reducer.test.ts src/persistence/file-event-store.test.ts src/durable-assets-v1-1.test.ts src/durable-assets-v1-2.test.ts",
-    "check": "npm run typecheck && npm test"
+    "build": "rm -rf dist && tsc --outDir dist --rootDir src",
+    "test": "tsx --test src/reducer/promotion-reducer.test.ts src/persistence/file-event-store.test.ts src/durable-assets-v1-1.test.ts src/durable-assets-v1-2.test.ts src/durable-assets-production.test.ts",
+    "check": "npm run typecheck && npm test && npm run build",
+    "start:provenance": "node dist/mcp/read-only-http-server.js"
   },
   "dependencies": {
+    "@modelcontextprotocol/node": "2.0.0",
     "@modelcontextprotocol/server": "2.0.0",
     "zod": "4.4.3"
   },
