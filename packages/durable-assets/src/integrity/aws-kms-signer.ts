@@ -1,15 +1,15 @@
 import { createHash, createPublicKey, verify as verifySignature } from "node:crypto";
-import { GetPublicKeyCommand, KMSClient, SignCommand } from "@aws-sdk/client-kms";
+import { GetPublicKeyCommand, KMSClient, SignCommand, type SignCommandOutput } from "@aws-sdk/client-kms";
 import type { CheckpointSigner, CheckpointVerifier } from "./checkpoint-signing.js";
 
 export interface AwsKmsSignerOptions {
-  sendSign?: (command: SignCommand) => Promise<{ Signature?: Uint8Array }>;
+  sendSign?: (command: SignCommand) => Promise<Pick<SignCommandOutput, "Signature">>;
   client?: unknown;
   keyId: string;
   publicKeyDer: Uint8Array;
 }
 
-type SignSender = (command: SignCommand) => Promise<{ Signature?: Uint8Array }>;
+type SignSender = (command: SignCommand) => Promise<Pick<SignCommandOutput, "Signature">>;
 
 function resolveSignSender(options: AwsKmsSignerOptions): SignSender {
   if (options.sendSign) return options.sendSign;
@@ -46,10 +46,11 @@ export class AwsKmsEcdsaP256Signer implements CheckpointSigner {
   }
 
   async sign(payload: Uint8Array): Promise<Uint8Array> {
+    const digest = createHash("sha256").update(payload).digest();
     const response = await this.sendSign(new SignCommand({
       KeyId: this.keyId,
-      Message: payload,
-      MessageType: "RAW",
+      Message: digest,
+      MessageType: "DIGEST",
       SigningAlgorithm: "ECDSA_SHA_256",
     }));
     if (!response.Signature?.length) throw new Error(`AWS KMS returned no signature for key ${this.keyId}.`);
