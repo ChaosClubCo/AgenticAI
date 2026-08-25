@@ -5,17 +5,19 @@ on:
     branches: [main, feat/durable-asset-promotion-v1]
     paths:
       - "packages/durable-assets/**"
+      - "packages/durable-assets-aws-kms/**"
       - ".github/workflows/durable-assets.yml"
   pull_request:
     paths:
       - "packages/durable-assets/**"
+      - "packages/durable-assets-aws-kms/**"
       - ".github/workflows/durable-assets.yml"
 
 permissions:
   contents: read
 
 jobs:
-  verify:
+  verify-core:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -27,5 +29,20 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: packages/durable-assets/package.json
+      - run: npm install --ignore-scripts --no-audit --no-fund
+      - run: npm run check
+
+  verify-aws-kms:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/durable-assets-aws-kms
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: packages/durable-assets-aws-kms/package.json
       - run: npm install --ignore-scripts --no-audit --no-fund
       - run: npm run check
