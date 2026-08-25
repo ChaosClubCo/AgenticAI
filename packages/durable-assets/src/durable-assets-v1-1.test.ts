@@ -107,7 +107,7 @@ test("ASSET_MERGED executes candidate merge into an existing asset", () => {
   assert.ok(state.assets["authority-asset-10"]?.evidenceRefs.some((item) => item.occurrenceId === "merge-occurrence"));
 });
 
-test("ASSET_VERSION_SUPERSEDED deprecates the old version and resets validation", () => {
+test("ASSET_VERSION_SUPERSEDED preserves predecessor until replacement activation and resets validation", () => {
   let state = reducePromotionEvent(createEmptyRegistry(NOW), authorityEvent("OPERATOR_PROMOTION_AUTHORIZED", 20)).state;
   const supersede = PromotionEventV1Schema.parse({
     schema: "PromotionEvent/v1",
@@ -125,10 +125,38 @@ test("ASSET_VERSION_SUPERSEDED deprecates the old version and resets validation"
   });
   state = reducePromotionEvent(state, supersede).state;
 
-  assert.equal(state.assets["authority-asset-20"]?.lifecycle, "DEPRECATED");
+  assert.equal(state.assets["authority-asset-20"]?.lifecycle, "PROMOTED");
+  assert.equal(state.assets["authority-asset-20"]?.supersededBy, "authority-asset-20-v2");
   assert.equal(state.assets["authority-asset-20-v2"]?.lifecycle, "PROMOTED");
   assert.deepEqual(state.assets["authority-asset-20-v2"]?.tests, []);
   assert.deepEqual(state.assets["authority-asset-20-v2"]?.supersedes, ["authority-asset-20"]);
+
+  state = transitionAsset(state, "authority-asset-20-v2", "TESTED", 101);
+  for (const [offset, testType] of [
+    "POSITIVE_TRIGGER",
+    "NEGATIVE_TRIGGER",
+    "AMBIGUOUS_TRIGGER",
+    "OUTPUT_CONTRACT",
+    "FAILURE_PATH",
+  ].entries()) {
+    const testEvent = PromotionEventV1Schema.parse({
+      schema: "PromotionEvent/v1",
+      eventId: `30000000-0000-4000-8000-${String(200 + offset).padStart(12, "0")}`,
+      occurredAt: NOW,
+      actorId: "test-suite",
+      type: "ASSET_TEST_RECORDED",
+      assetId: "authority-asset-20-v2",
+      testId: `replacement-test-${offset}`,
+      testType,
+      status: "PASSED",
+    });
+    state = reducePromotionEvent(state, testEvent).state;
+  }
+  state = transitionAsset(state, "authority-asset-20-v2", "VERIFIED", 102);
+  state = transitionAsset(state, "authority-asset-20-v2", "ACTIVE", 103);
+
+  assert.equal(state.assets["authority-asset-20-v2"]?.lifecycle, "ACTIVE");
+  assert.equal(state.assets["authority-asset-20"]?.lifecycle, "DEPRECATED");
 });
 
 test("registry projection hash is deterministic and checkpoints detect tampering", () => {
@@ -231,3 +259,21 @@ test("MCP tool handlers derive authority from trusted server configuration", asy
   assert.equal(result.event.actorId, "mcp-trusted-operator");
   assert.equal(events.length, 1);
 });
+
+function transitionAsset(
+  state: ReturnType<typeof createEmptyRegistry>,
+  assetId: string,
+  to: "TESTED" | "VERIFIED" | "ACTIVE",
+  suffix: number,
+) {
+  const event = PromotionEventV1Schema.parse({
+    schema: "PromotionEvent/v1",
+    eventId: `90000000-0000-4000-8000-${String(suffix).padStart(12, "0")}`,
+    occurredAt: NOW,
+    actorId: "test-suite",
+    type: "LIFECYCLE_TRANSITION_REQUESTED",
+    assetId,
+    to,
+  });
+  return reducePromotionEvent(state, event).state;
+}
