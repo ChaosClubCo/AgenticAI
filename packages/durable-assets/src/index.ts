@@ -7,6 +7,7 @@ export * from "./schemas/integrity.v1.js";
 export * from "./schemas/trust.v1.js";
 export * from "./integrity/canonical-hash.js";
 export * from "./integrity/checkpoint-signing.js";
+export * from "./integrity/snapshot-signing.js";
 export * from "./integrity/aws-kms-signer.js";
 export * from "./integrity/verification-key-registry.js";
 export * from "./integrity/git-materialization-verifier.js";
