@@ -2,12 +2,16 @@ import { createHash, createPublicKey, verify as verifySignature } from "node:cry
 import { GetPublicKeyCommand, SignCommand } from "@aws-sdk/client-kms";
 import type { CheckpointSigner, CheckpointVerifier } from "./checkpoint-signing.js";
 
-interface KmsClientLike {
-  send(command: GetPublicKeyCommand | SignCommand): Promise<{ PublicKey?: Uint8Array; Signature?: Uint8Array }>;
+interface KmsSignClientLike {
+  send(command: SignCommand): Promise<{ Signature?: Uint8Array }>;
+}
+
+interface KmsFactoryClientLike extends KmsSignClientLike {
+  send(command: GetPublicKeyCommand): Promise<{ PublicKey?: Uint8Array }>;
 }
 
 export interface AwsKmsSignerOptions {
-  client: KmsClientLike;
+  client: KmsSignClientLike;
   keyId: string;
   publicKeyDer: Uint8Array;
 }
@@ -17,7 +21,7 @@ export class AwsKmsEcdsaP256Signer implements CheckpointSigner {
   readonly keyId: string;
   readonly publicKeyFingerprint: `sha256:${string}`;
   readonly verifier: CheckpointVerifier;
-  private readonly client: KmsClientLike;
+  private readonly client: KmsSignClientLike;
   private readonly publicKeyDer: Uint8Array;
 
   constructor(options: AwsKmsSignerOptions) {
@@ -48,7 +52,7 @@ export class AwsKmsEcdsaP256Signer implements CheckpointSigner {
   }
 }
 
-export async function createAwsKmsEcdsaP256Signer(input: { client: KmsClientLike; keyId: string }): Promise<AwsKmsEcdsaP256Signer> {
+export async function createAwsKmsEcdsaP256Signer(input: { client: KmsFactoryClientLike; keyId: string }): Promise<AwsKmsEcdsaP256Signer> {
   const response = await input.client.send(new GetPublicKeyCommand({ KeyId: input.keyId }));
   if (!response.PublicKey?.length) throw new Error(`AWS KMS returned no public key for ${input.keyId}.`);
   return new AwsKmsEcdsaP256Signer({ client: input.client, keyId: input.keyId, publicKeyDer: response.PublicKey });
