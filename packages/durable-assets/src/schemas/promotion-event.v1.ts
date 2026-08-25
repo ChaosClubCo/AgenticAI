@@ -4,6 +4,7 @@ import {
   DurableAssetTypeSchema,
   EvidenceReferenceSchema,
   IsoDateTimeSchema,
+  SemverSchema,
   SlugSchema,
 } from "./common.v1.js";
 
@@ -22,6 +23,18 @@ const RegistryTestTypeSchema = z.enum([
   "FAILURE_PATH",
   "SECURITY",
 ]);
+
+const AuthorityPromotionFields = {
+  authorityRef: z.string().min(1).max(512),
+  assetId: SlugSchema,
+  patternId: SlugSchema,
+  assetType: DurableAssetTypeSchema,
+  version: SemverSchema,
+  canonicalPath: z.string().min(1),
+  description: z.string().min(1),
+  semanticFingerprint: z.string().min(1),
+  evidenceRefs: z.array(EvidenceReferenceSchema),
+};
 
 export const PromotionEventV1Schema = z.discriminatedUnion("type", [
   EventBaseSchema.extend({
@@ -49,9 +62,36 @@ export const PromotionEventV1Schema = z.discriminatedUnion("type", [
     assetId: SlugSchema,
     patternId: SlugSchema,
     assetType: DurableAssetTypeSchema,
-    version: z.string().regex(/^\d+\.\d+\.\d+$/),
+    version: SemverSchema,
     canonicalPath: z.string().min(1),
     description: z.string().min(1),
+  }),
+  EventBaseSchema.extend({
+    type: z.literal("SECURITY_PROMOTION_AUTHORIZED"),
+    ...AuthorityPromotionFields,
+  }),
+  EventBaseSchema.extend({
+    type: z.literal("COMPLIANCE_PROMOTION_AUTHORIZED"),
+    ...AuthorityPromotionFields,
+  }),
+  EventBaseSchema.extend({
+    type: z.literal("OPERATOR_PROMOTION_AUTHORIZED"),
+    ...AuthorityPromotionFields,
+  }),
+  EventBaseSchema.extend({
+    type: z.literal("ASSET_MERGED"),
+    patternId: SlugSchema,
+    targetAssetId: SlugSchema,
+  }),
+  EventBaseSchema.extend({
+    type: z.literal("ASSET_VERSION_SUPERSEDED"),
+    previousAssetId: SlugSchema,
+    assetId: SlugSchema,
+    version: SemverSchema,
+    canonicalPath: z.string().min(1),
+    description: z.string().min(1),
+    semanticFingerprint: z.string().min(1),
+    evidenceRefs: z.array(EvidenceReferenceSchema),
   }),
   EventBaseSchema.extend({
     type: z.literal("ASSET_TEST_RECORDED"),
