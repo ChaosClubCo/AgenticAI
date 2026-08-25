@@ -23,7 +23,7 @@ test("small payloads use RAW ECDSA_SHA_256 without private key export", async ()
 test("payloads above the AWS KMS raw limit use SHA-256 DIGEST signing", async () => {
   const { publicKey } = generateKeyPairSync("ec", { namedCurve: "prime256v1" });
   const publicKeyDer = publicKey.export({ type: "spki", format: "der" });
-  const calls: Array<{ Message?: Uint8Array; MessageType?: string }> = [];
+  const calls: unknown[] = [];
   const signer = new AwsKmsEcdsaP256Signer({
     keyId,
     publicKeyDer,
@@ -31,6 +31,7 @@ test("payloads above the AWS KMS raw limit use SHA-256 DIGEST signing", async ()
   });
   const payload = new Uint8Array(4097).fill(7);
   await signer.sign(payload);
-  assert.equal(calls[0]?.MessageType, "DIGEST");
-  assert.deepEqual(calls[0]?.Message, createHash("sha256").update(payload).digest());
+  const call = calls[0] as { Message?: Uint8Array | undefined; MessageType?: string | undefined };
+  assert.equal(call.MessageType, "DIGEST");
+  assert.deepEqual(call.Message, createHash("sha256").update(payload).digest());
 });
