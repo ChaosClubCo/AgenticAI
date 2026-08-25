@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { createMcpHandler, McpServer } from "@modelcontextprotocol/server";
 import { toNodeHandler } from "@modelcontextprotocol/node";
 import { registerProvenanceTools } from "./server.js";
+import type { ProvenanceOptions } from "./provenance-tools.js";
 import { FilePromotionEventStore } from "../persistence/file-event-store.js";
 import { FileRegistryCheckpointStore } from "../persistence/file-checkpoint-store.js";
 import { FileMaterializationReceiptStore } from "../persistence/materialization-receipt-store.js";
@@ -21,22 +22,24 @@ const allowedOrigins = new Set((process.env.ALLOWED_ORIGINS ?? "").split(",").ma
 
 const mcp = createMcpHandler(() => {
   const server = new McpServer({ name: "loxihart-durable-assets-provenance", version: "1.2.0" });
-  registerProvenanceTools(server, {
+  const provenance: ProvenanceOptions = {
     listEvents: () => eventStore.list(),
     listCheckpoints: () => checkpointStore.list(),
     getAuthorityPolicy: async () => PRODUCTION_AUTHORITY_POLICY,
-    getMaterializationReceipt: gitRepoRoot
-      ? async receiptId => (await receiptStore.list()).find(receipt => receipt.receiptId === receiptId) ?? null
-      : undefined,
-    gitReader: gitRepoRoot ? new GitCliObjectReader(gitRepoRoot) : undefined,
-  });
+  };
+  if (gitRepoRoot) {
+    provenance.getMaterializationReceipt = async receiptId => (await receiptStore.list()).find(receipt => receipt.receiptId === receiptId) ?? null;
+    provenance.gitReader = new GitCliObjectReader(gitRepoRoot);
+  }
+  registerProvenanceTools(server, provenance);
   return server;
 });
 const handleMcp = toNodeHandler(mcp, { onerror: error => console.error("MCP request failed", error) });
 
 const http = createServer(async (req, res) => {
+  const method = req.method;
   const url = new URL(req.url ?? "/", `http://${req.headers.host ?? "localhost"}`);
-  if (req.method === "GET" && url.pathname === "/health") {
+  if (method === "GET" && url.pathname === "/health") {
     res.writeHead(200, { "content-type": "application/json", "cache-control": "no-store" });
     res.end(JSON.stringify({ status: "ok", mode: "read-only", mutationCredentials: false, signingCredentials: false }));
     return;
@@ -46,13 +49,18 @@ const http = createServer(async (req, res) => {
     res.end(JSON.stringify({ error: "not_found" }));
     return;
   }
+  if (!method) {
+    res.writeHead(400, { "content-type": "application/json" });
+    res.end(JSON.stringify({ error: "missing_method" }));
+    return;
+  }
   const origin = req.headers.origin;
   if (origin && !allowedOrigins.has(origin)) {
     res.writeHead(403, { "content-type": "application/json" });
     res.end(JSON.stringify({ error: "origin_not_allowed" }));
     return;
   }
-  await handleMcp(req, res);
+  await handleMcp(req as Parameters<typeof handleMcp>[0], res);
 });
 
 http.listen(port, "0.0.0.0", () => {
