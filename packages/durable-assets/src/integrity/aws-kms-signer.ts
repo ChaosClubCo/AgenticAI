@@ -3,9 +3,22 @@ import { GetPublicKeyCommand, KMSClient, SignCommand } from "@aws-sdk/client-kms
 import type { CheckpointSigner, CheckpointVerifier } from "./checkpoint-signing.js";
 
 export interface AwsKmsSignerOptions {
-  sendSign: (command: SignCommand) => Promise<{ Signature?: Uint8Array }>;
+  sendSign?: (command: SignCommand) => Promise<{ Signature?: Uint8Array }>;
+  client?: unknown;
   keyId: string;
   publicKeyDer: Uint8Array;
+}
+
+type SignSender = (command: SignCommand) => Promise<{ Signature?: Uint8Array }>;
+
+function resolveSignSender(options: AwsKmsSignerOptions): SignSender {
+  if (options.sendSign) return options.sendSign;
+  if (!options.client || typeof options.client !== "object" || !("send" in options.client)) {
+    throw new Error("AWS KMS signer requires sendSign or a client with send().");
+  }
+  const send = (options.client as { send?: unknown }).send;
+  if (typeof send !== "function") throw new Error("AWS KMS signer client.send must be a function.");
+  return command => (send as SignSender).call(options.client, command);
 }
 
 export class AwsKmsEcdsaP256Signer implements CheckpointSigner {
@@ -13,11 +26,11 @@ export class AwsKmsEcdsaP256Signer implements CheckpointSigner {
   readonly keyId: string;
   readonly publicKeyFingerprint: `sha256:${string}`;
   readonly verifier: CheckpointVerifier;
-  private readonly sendSign: AwsKmsSignerOptions["sendSign"];
+  private readonly sendSign: SignSender;
   private readonly publicKeyDer: Uint8Array;
 
   constructor(options: AwsKmsSignerOptions) {
-    this.sendSign = options.sendSign;
+    this.sendSign = resolveSignSender(options);
     this.keyId = options.keyId;
     this.publicKeyDer = options.publicKeyDer;
     this.publicKeyFingerprint = `sha256:${createHash("sha256").update(this.publicKeyDer).digest("hex")}`;
