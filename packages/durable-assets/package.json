@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test src/**/*.test.ts",
+    "test": "tsx --test src/reducer/promotion-reducer.test.ts src/persistence/file-event-store.test.ts",
     "check": "npm run typecheck && npm test"
   },
   "dependencies": {
