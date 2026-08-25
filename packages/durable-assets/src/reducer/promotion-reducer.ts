@@ -74,6 +74,8 @@ function applyEvent(
       return matchExistingAsset(state, event);
     case "ASSET_PROMOTED":
       return promoteAsset(state, event);
+    case "ASSET_TEST_RECORDED":
+      return recordAssetTest(state, event);
     case "LIFECYCLE_TRANSITION_REQUESTED":
       return transitionAsset(state, event);
   }
@@ -185,6 +187,32 @@ function promoteAsset(
   };
 }
 
+function recordAssetTest(
+  state: DurableAssetRegistryV1,
+  event: Extract<PromotionEventV1, { type: "ASSET_TEST_RECORDED" }>,
+): Omit<PromotionReducerResult, "replayed"> {
+  const asset = state.assets[event.assetId];
+  if (!asset) throw new Error(`Missing asset: ${event.assetId}`);
+  if (asset.lifecycle === "DEPRECATED") {
+    throw new Error(`Cannot record tests against deprecated asset: ${event.assetId}`);
+  }
+
+  const tests = [
+    ...asset.tests.filter((test) => test.id !== event.testId),
+    { id: event.testId, type: event.testType, status: event.status },
+  ].sort((a, b) => a.id.localeCompare(b.id));
+
+  return {
+    state: {
+      ...state,
+      assets: {
+        ...state.assets,
+        [asset.assetId]: { ...asset, tests, updatedAt: event.occurredAt },
+      },
+    },
+  };
+}
+
 function transitionAsset(
   state: DurableAssetRegistryV1,
   event: Extract<PromotionEventV1, { type: "LIFECYCLE_TRANSITION_REQUESTED" }>,
@@ -197,8 +225,8 @@ function transitionAsset(
     throw new Error(`Invalid lifecycle transition: ${asset.lifecycle} -> ${event.to}`);
   }
 
-  if (event.to === "ACTIVE" && !hasRequiredPassingTests(asset)) {
-    throw new Error("Activation requires passing trigger, output, and failure-path tests.");
+  if ((event.to === "VERIFIED" || event.to === "ACTIVE") && !hasRequiredPassingTests(asset)) {
+    throw new Error(`${event.to} requires passing trigger, output, and failure-path tests.`);
   }
 
   return {
