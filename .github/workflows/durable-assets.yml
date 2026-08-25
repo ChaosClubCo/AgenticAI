@@ -1,0 +1,31 @@
+name: Durable Assets
+
+on:
+  push:
+    branches: [main, feat/durable-asset-promotion-v1]
+    paths:
+      - "packages/durable-assets/**"
+      - ".github/workflows/durable-assets.yml"
+  pull_request:
+    paths:
+      - "packages/durable-assets/**"
+      - ".github/workflows/durable-assets.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/durable-assets
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: packages/durable-assets/package.json
+      - run: npm install --ignore-scripts --no-audit --no-fund
+      - run: npm run check
