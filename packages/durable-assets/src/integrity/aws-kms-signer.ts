@@ -10,6 +10,7 @@ export interface AwsKmsSignerOptions {
 }
 
 type SignSender = (command: SignCommand) => Promise<Pick<SignCommandOutput, "Signature">>;
+const KMS_RAW_MESSAGE_LIMIT_BYTES = 4096;
 
 function resolveSignSender(options: AwsKmsSignerOptions): SignSender {
   if (options.sendSign) return options.sendSign;
@@ -46,11 +47,12 @@ export class AwsKmsEcdsaP256Signer implements CheckpointSigner {
   }
 
   async sign(payload: Uint8Array): Promise<Uint8Array> {
-    const digest = createHash("sha256").update(payload).digest();
+    const useDigest = payload.byteLength > KMS_RAW_MESSAGE_LIMIT_BYTES;
+    const message = useDigest ? createHash("sha256").update(payload).digest() : payload;
     const response = await this.sendSign(new SignCommand({
       KeyId: this.keyId,
-      Message: digest,
-      MessageType: "DIGEST",
+      Message: message,
+      MessageType: useDigest ? "DIGEST" : "RAW",
       SigningAlgorithm: "ECDSA_SHA_256",
     }));
     if (!response.Signature?.length) throw new Error(`AWS KMS returned no signature for key ${this.keyId}.`);
