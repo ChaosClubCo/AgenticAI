@@ -4,6 +4,7 @@ import {
   EvidenceReferenceSchema,
   IsoDateTimeSchema,
   PromotionDecisionSchema,
+  SemverSchema,
   SlugSchema,
   ValidationStatusSchema,
 } from "./common.v1.js";
@@ -11,6 +12,9 @@ import {
 export const PromotionReasonCodeSchema = z.enum([
   "THREE_SESSION_THRESHOLD",
   "EXPLICIT_OPERATOR_PROMOTION",
+  "SECURITY_AUTHORITY",
+  "COMPLIANCE_AUTHORITY",
+  "OPERATOR_AUTHORITY",
   "EXISTING_ASSET_MATCH",
   "INSUFFICIENT_DISTINCT_SESSIONS",
   "TEMPORARY_CONTEXT",
@@ -39,7 +43,7 @@ export const DurableAssetPromotionReceiptV1Schema = z.object({
   validationStatus: ValidationStatusSchema,
   reasonCodes: z.array(PromotionReasonCodeSchema).min(1),
   createdAt: IsoDateTimeSchema,
-  reducerVersion: z.literal("1.0.0"),
+  reducerVersion: SemverSchema,
 }).strict().superRefine((receipt, ctx) => {
   const assetProducing = new Set([
     "PROMOTE",
@@ -50,7 +54,7 @@ export const DurableAssetPromotionReceiptV1Schema = z.object({
 
   if (assetProducing.has(receipt.decision) && receipt.assetType === null) {
     ctx.addIssue({
-      code: z.ZodIssueCode.custom,
+      code: "custom",
       path: ["assetType"],
       message: "Asset-producing decisions require assetType.",
     });
@@ -58,18 +62,15 @@ export const DurableAssetPromotionReceiptV1Schema = z.object({
 
   if (receipt.decision === "REJECT" && receipt.canonicalPath !== null) {
     ctx.addIssue({
-      code: z.ZodIssueCode.custom,
+      code: "custom",
       path: ["canonicalPath"],
       message: "Rejected candidates cannot have a canonical path.",
     });
   }
 
-  if (
-    receipt.reasonCodes.includes("THREE_SESSION_THRESHOLD") &&
-    receipt.distinctSessionCount < 3
-  ) {
+  if (receipt.reasonCodes.includes("THREE_SESSION_THRESHOLD") && receipt.distinctSessionCount < 3) {
     ctx.addIssue({
-      code: z.ZodIssueCode.custom,
+      code: "custom",
       path: ["distinctSessionCount"],
       message: "Three-session threshold requires three distinct sessions.",
     });
