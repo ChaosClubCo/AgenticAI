@@ -1,9 +1,12 @@
 import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import { z } from "zod";
 import {
   MaterializationReceiptV1Schema,
   type MaterializationReceiptV1,
 } from "../schemas/integrity.v1.js";
+
+const ReceiptIdSchema = z.string().uuid();
 
 export class DuplicateMaterializationReceiptError extends Error {
   constructor(public readonly receiptId: string) {
@@ -42,6 +45,17 @@ export class FileMaterializationReceiptStore {
     }
   }
 
+  async get(receiptId: string): Promise<MaterializationReceiptV1 | null> {
+    const id = ReceiptIdSchema.parse(receiptId);
+    try {
+      const raw = await readFile(join(this.directory, `${id}.json`), "utf8");
+      return MaterializationReceiptV1Schema.parse(JSON.parse(raw));
+    } catch (error) {
+      if (isNotFound(error)) return null;
+      throw error;
+    }
+  }
+
   async list(): Promise<MaterializationReceiptV1[]> {
     await mkdir(this.directory, { recursive: true });
     const names = (await readdir(this.directory)).filter((name) => name.endsWith(".json")).sort();
@@ -55,4 +69,8 @@ export class FileMaterializationReceiptStore {
 
 function isAlreadyExists(error: unknown): boolean {
   return typeof error === "object" && error !== null && "code" in error && error.code === "EEXIST";
+}
+
+function isNotFound(error: unknown): boolean {
+  return typeof error === "object" && error !== null && "code" in error && error.code === "ENOENT";
 }
