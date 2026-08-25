@@ -7,6 +7,7 @@ import {
   SemverSchema,
   SlugSchema,
 } from "./common.v1.js";
+import { PromotionAuthoritySchema } from "./integrity.v1.js";
 
 export const RegistryTestSchema = z.object({
   id: SlugSchema,
@@ -36,7 +37,10 @@ export const DurableAssetRegistryEntryV1Schema = z.object({
   }).strict(),
   evidenceRefs: z.array(EvidenceReferenceSchema),
   tests: z.array(RegistryTestSchema),
+  promotionAuthority: PromotionAuthoritySchema.nullable(),
+  mergedPatternIds: z.array(SlugSchema),
   supersedes: z.array(SlugSchema),
+  supersededBy: SlugSchema.nullable(),
   createdAt: IsoDateTimeSchema,
   updatedAt: IsoDateTimeSchema,
 }).strict();
@@ -56,6 +60,7 @@ export const DurableAssetCandidateV1Schema = z.object({
   }).strict()),
   temporaryContext: z.boolean(),
   reusable: z.boolean(),
+  mergedIntoAssetId: SlugSchema.nullable(),
 }).strict();
 
 export const DurableAssetRegistryV1Schema = z.object({
