@@ -40,7 +40,7 @@ export async function verifySignedRegistryProjectionSnapshot(
   return verifier.verify({
     algorithm: parsed.signingAlgorithm,
     keyId: parsed.keyId,
-    publicKeyFingerprint: parsed.publicKeyFingerprint,
+    publicKeyFingerprint: parsed.publicKeyFingerprint as `sha256:${string}`,
     payload: canonicalBytes(parsed.snapshot),
     signature: Buffer.from(parsed.signature, "base64"),
   });
