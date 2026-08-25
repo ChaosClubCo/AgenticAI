@@ -14,6 +14,15 @@ const EventBaseSchema = z.object({
   actorId: z.string().min(1),
 }).strict();
 
+const RegistryTestTypeSchema = z.enum([
+  "POSITIVE_TRIGGER",
+  "NEGATIVE_TRIGGER",
+  "AMBIGUOUS_TRIGGER",
+  "OUTPUT_CONTRACT",
+  "FAILURE_PATH",
+  "SECURITY",
+]);
+
 export const PromotionEventV1Schema = z.discriminatedUnion("type", [
   EventBaseSchema.extend({
     type: z.literal("PATTERN_OBSERVED"),
@@ -43,6 +52,13 @@ export const PromotionEventV1Schema = z.discriminatedUnion("type", [
     version: z.string().regex(/^\d+\.\d+\.\d+$/),
     canonicalPath: z.string().min(1),
     description: z.string().min(1),
+  }),
+  EventBaseSchema.extend({
+    type: z.literal("ASSET_TEST_RECORDED"),
+    assetId: SlugSchema,
+    testId: SlugSchema,
+    testType: RegistryTestTypeSchema,
+    status: z.enum(["PENDING", "PASSED", "FAILED"]),
   }),
   EventBaseSchema.extend({
     type: z.literal("LIFECYCLE_TRANSITION_REQUESTED"),
