@@ -1,17 +1,9 @@
 import { createHash, createPublicKey, verify as verifySignature } from "node:crypto";
-import { GetPublicKeyCommand, SignCommand } from "@aws-sdk/client-kms";
+import { GetPublicKeyCommand, KMSClient, SignCommand } from "@aws-sdk/client-kms";
 import type { CheckpointSigner, CheckpointVerifier } from "./checkpoint-signing.js";
 
-interface KmsSignClientLike {
-  send(command: SignCommand): Promise<{ Signature?: Uint8Array }>;
-}
-
-interface KmsFactoryClientLike extends KmsSignClientLike {
-  send(command: GetPublicKeyCommand): Promise<{ PublicKey?: Uint8Array }>;
-}
-
 export interface AwsKmsSignerOptions {
-  client: KmsSignClientLike;
+  sendSign: (command: SignCommand) => Promise<{ Signature?: Uint8Array }>;
   keyId: string;
   publicKeyDer: Uint8Array;
 }
@@ -21,11 +13,11 @@ export class AwsKmsEcdsaP256Signer implements CheckpointSigner {
   readonly keyId: string;
   readonly publicKeyFingerprint: `sha256:${string}`;
   readonly verifier: CheckpointVerifier;
-  private readonly client: KmsSignClientLike;
+  private readonly sendSign: AwsKmsSignerOptions["sendSign"];
   private readonly publicKeyDer: Uint8Array;
 
   constructor(options: AwsKmsSignerOptions) {
-    this.client = options.client;
+    this.sendSign = options.sendSign;
     this.keyId = options.keyId;
     this.publicKeyDer = options.publicKeyDer;
     this.publicKeyFingerprint = `sha256:${createHash("sha256").update(this.publicKeyDer).digest("hex")}`;
@@ -41,7 +33,7 @@ export class AwsKmsEcdsaP256Signer implements CheckpointSigner {
   }
 
   async sign(payload: Uint8Array): Promise<Uint8Array> {
-    const response = await this.client.send(new SignCommand({
+    const response = await this.sendSign(new SignCommand({
       KeyId: this.keyId,
       Message: payload,
       MessageType: "RAW",
@@ -52,8 +44,12 @@ export class AwsKmsEcdsaP256Signer implements CheckpointSigner {
   }
 }
 
-export async function createAwsKmsEcdsaP256Signer(input: { client: KmsFactoryClientLike; keyId: string }): Promise<AwsKmsEcdsaP256Signer> {
+export async function createAwsKmsEcdsaP256Signer(input: { client: KMSClient; keyId: string }): Promise<AwsKmsEcdsaP256Signer> {
   const response = await input.client.send(new GetPublicKeyCommand({ KeyId: input.keyId }));
   if (!response.PublicKey?.length) throw new Error(`AWS KMS returned no public key for ${input.keyId}.`);
-  return new AwsKmsEcdsaP256Signer({ client: input.client, keyId: input.keyId, publicKeyDer: response.PublicKey });
+  return new AwsKmsEcdsaP256Signer({
+    sendSign: command => input.client.send(command),
+    keyId: input.keyId,
+    publicKeyDer: response.PublicKey,
+  });
 }
