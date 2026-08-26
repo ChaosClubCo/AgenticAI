@@ -16,7 +16,7 @@ export class FileBehaviorConformanceReceiptStore {
   }
 
   async list(): Promise<AgentBehaviorConformanceReceiptV1[]> {
-    return listParsed(this.directory, AgentBehaviorConformanceReceiptV1Schema.parse);
+    return listParsed(this.directory, value => AgentBehaviorConformanceReceiptV1Schema.parse(value));
   }
 }
 
@@ -29,7 +29,7 @@ export class FileLiveBehaviorConformanceReceiptStore {
   }
 
   async list(): Promise<LiveAgentBehaviorConformanceReceiptV1[]> {
-    return listParsed(this.directory, LiveAgentBehaviorConformanceReceiptV1Schema.parse);
+    return listParsed(this.directory, value => LiveAgentBehaviorConformanceReceiptV1Schema.parse(value));
   }
 }
 
