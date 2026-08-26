@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -92,6 +92,10 @@ test("same fixture produces one conformance receipt and persists immutably", asy
     await store.append(receipt);
     await assert.rejects(() => store.append(receipt), /already exists/i);
     assert.deepEqual(await store.list(), [receipt]);
+
+    const artifactDir = join(process.cwd(), "artifacts", "behavior");
+    await mkdir(artifactDir, { recursive: true });
+    await writeFile(join(artifactDir, "verification-before-completion-sandbox-receipt.json"), `${JSON.stringify(receipt, null, 2)}\n`, "utf8");
   } finally {
     await rm(root, { recursive: true, force: true });
   }
