@@ -6,7 +6,7 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "build": "rm -rf dist && tsc --outDir dist --rootDir src",
-    "test": "tsx --test src/reducer/promotion-reducer.test.ts src/persistence/file-event-store.test.ts src/durable-assets-v1-1.test.ts src/durable-assets-v1-2.test.ts src/durable-assets-production.test.ts src/verification-before-completion.acceptance.test.ts src/behavior/behavior-conformance.test.ts src/behavior/live/live-runners.test.ts src/behavior/live/live-receipt-evidence.test.ts",
+    "test": "tsx --test src/reducer/promotion-reducer.test.ts src/persistence/file-event-store.test.ts src/durable-assets-v1-1.test.ts src/durable-assets-v1-2.test.ts src/durable-assets-production.test.ts src/verification-before-completion.acceptance.test.ts src/behavior/behavior-conformance.test.ts src/behavior/live/live-runners.test.ts src/behavior/live/live-receipt-evidence.test.ts src/behavior/live/live-identity-binding.test.ts",
     "check": "npm run typecheck && npm test && npm run build",
     "live:conformance": "npm run build && node dist/behavior/live/run-live-conformance.js",
     "start:provenance": "node dist/mcp/read-only-http-server.js"
