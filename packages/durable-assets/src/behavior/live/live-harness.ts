@@ -1,4 +1,6 @@
 import { randomUUID } from "node:crypto";
+import { mkdir, rm } from "node:fs/promises";
+import { join } from "node:path";
 import { sha256Canonical } from "../../integrity/canonical-hash.js";
 import {
   AgentBehaviorResultV1Schema,
@@ -8,7 +10,7 @@ import {
   type LiveProviderBehaviorResultV1,
 } from "../contracts.v1.js";
 import { evaluateBehaviorConformance } from "../evaluator.js";
-import type { BehaviorFixture } from "../fixtures/verification-before-completion.js";
+import { createBehaviorFixture, type BehaviorFixture } from "../fixtures/verification-before-completion.js";
 import { ProviderUnavailableError, type LiveProviderRunner } from "./live-runner-common.js";
 
 const EXPECTED = ["claude", "codex", "gemini"] as const;
@@ -21,10 +23,17 @@ export async function runLiveProviderConformance(
 ): Promise<LiveAgentBehaviorConformanceReceiptV1> {
   const results: LiveProviderBehaviorResultV1[] = [];
   const evidenceContexts: Array<{ skillAssetId: string; skillVersion: string; projectionHash: string; taskHash: string }> = [];
+  const providerRoot = join(fixture.sandboxRoot, ".live-providers");
+  await mkdir(providerRoot, { recursive: true });
 
   for (const runner of runners) {
+    const sandboxRoot = join(providerRoot, runner.adapterId);
+    await rm(sandboxRoot, { recursive: true, force: true });
+    await mkdir(sandboxRoot, { recursive: true });
+    const providerFixture = createBehaviorFixture(sandboxRoot, fixture.task);
+
     try {
-      const evidence = await runner.run(fixture);
+      const evidence = await runner.run(providerFixture);
       evidenceContexts.push(evidence);
       results.push({
         adapterId: runner.adapterId,
