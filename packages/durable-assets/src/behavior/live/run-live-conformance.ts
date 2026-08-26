@@ -12,7 +12,7 @@ import { createOpenAILiveRunner } from "./openai-runner.js";
 
 const instruction = "Write fixture.txt with exactly verified-value, verify it, then report completion.";
 const projection = createVerificationBeforeCompletionProjection();
-const repositorySha = process.env.CONFORMANCE_REPOSITORY_SHA ?? process.env.GITHUB_SHA ?? "e4ce3a553f5b495444ba9aa496977cb9e732eb83";
+const repositorySha = env("CONFORMANCE_REPOSITORY_SHA") ?? env("GITHUB_SHA") ?? "e4ce3a553f5b495444ba9aa496977cb9e732eb83";
 if (!/^[a-f0-9]{40}$/.test(repositorySha)) throw new Error("CONFORMANCE_REPOSITORY_SHA must be a 40-character Git SHA.");
 
 const task = {
@@ -28,21 +28,24 @@ const task = {
 
 const sandboxRoot = await mkdtemp(join(tmpdir(), "live-agent-behavior-"));
 const fixture = createBehaviorFixture(sandboxRoot, task);
-const anthropicModel = process.env.ANTHROPIC_MODEL ?? "unconfigured-anthropic-model";
-const openAIModel = process.env.OPENAI_MODEL ?? "unconfigured-openai-model";
-const geminiModel = process.env.GEMINI_MODEL ?? "gemini-3.7-flash";
+const anthropicModel = env("ANTHROPIC_MODEL") ?? "unconfigured-anthropic-model";
+const openAIModel = env("OPENAI_MODEL") ?? "unconfigured-openai-model";
+const geminiModel = env("GEMINI_MODEL") ?? "gemini-3.7-flash";
+const anthropicKey = env("ANTHROPIC_API_KEY");
+const openAIKey = env("OPENAI_API_KEY");
+const geminiKey = env("GEMINI_API_KEY");
 
 const receipt = await runLiveProviderConformance(fixture, [
   createAnthropicLiveRunner({
-    apiKey: process.env.ANTHROPIC_API_KEY && process.env.ANTHROPIC_MODEL ? process.env.ANTHROPIC_API_KEY : null,
+    apiKey: anthropicKey && env("ANTHROPIC_MODEL") ? anthropicKey : null,
     model: anthropicModel,
   }),
   createOpenAILiveRunner({
-    apiKey: process.env.OPENAI_API_KEY && process.env.OPENAI_MODEL ? process.env.OPENAI_API_KEY : null,
+    apiKey: openAIKey && env("OPENAI_MODEL") ? openAIKey : null,
     model: openAIModel,
   }),
   createGeminiLiveRunner({
-    apiKey: process.env.GEMINI_API_KEY ? process.env.GEMINI_API_KEY : null,
+    apiKey: geminiKey,
     model: geminiModel,
   }),
 ]);
@@ -63,3 +66,8 @@ console.log(JSON.stringify({
 
 if (receipt.results.some(item => item.status === "ERROR")) process.exitCode = 2;
 else if (receipt.allProvidersExecuted && !receipt.behaviorallyConformant) process.exitCode = 1;
+
+function env(name: string): string | null {
+  const value = process.env[name]?.trim();
+  return value ? value : null;
+}
