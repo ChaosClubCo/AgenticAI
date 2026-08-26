@@ -39,6 +39,7 @@ export async function runLiveProviderConformance(
         adapterId: runner.adapterId,
         modelId: runner.modelId,
         status: "EXECUTED",
+        evidence,
         evidenceHash: sha256Canonical(evidence),
         behavior: evaluateBehaviorConformance(fixture.task, evidence),
       });
@@ -48,6 +49,7 @@ export async function runLiveProviderConformance(
         adapterId: runner.adapterId,
         modelId: runner.modelId,
         status: unavailable ? "UNAVAILABLE" : "ERROR",
+        evidence: null,
         evidenceHash: null,
         behavior: inconclusive(runner.adapterId, runner.modelId, unavailable ? "PROVIDER_UNAVAILABLE" : "PROVIDER_ERROR"),
       });
