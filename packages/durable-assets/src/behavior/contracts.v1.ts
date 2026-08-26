@@ -63,8 +63,47 @@ export const AgentBehaviorConformanceReceiptV1Schema = z.object({
   createdAt: z.string().datetime({ offset: true }),
 }).strict();
 
+export const LiveProviderExecutionStatusSchema = z.enum(["EXECUTED", "UNAVAILABLE", "ERROR"]);
+export const LiveProviderBehaviorResultV1Schema = z.object({
+  adapterId: BehaviorAdapterIdSchema,
+  modelId: z.string().min(1),
+  status: LiveProviderExecutionStatusSchema,
+  evidence: BehaviorExecutionEvidenceV1Schema.nullable(),
+  evidenceHash: Sha256Schema.nullable(),
+  behavior: AgentBehaviorResultV1Schema,
+}).strict().superRefine((result, ctx) => {
+  if (result.status === "EXECUTED" && (result.evidence === null || result.evidenceHash === null)) {
+    ctx.addIssue({ code: "custom", path: ["evidence"], message: "Executed providers require normalized evidence and its hash." });
+  }
+  if (result.status !== "EXECUTED" && (result.evidence !== null || result.evidenceHash !== null)) {
+    ctx.addIssue({ code: "custom", path: ["evidence"], message: "Unavailable or errored providers cannot claim execution evidence." });
+  }
+  if (result.evidence && (result.evidence.adapterId !== result.adapterId || result.evidence.modelId !== result.modelId)) {
+    ctx.addIssue({ code: "custom", path: ["evidence"], message: "Provider identity must match normalized execution evidence." });
+  }
+});
+
+export const LiveAgentBehaviorConformanceReceiptV1Schema = z.object({
+  schema: z.literal("LiveAgentBehaviorConformanceReceipt/v1"),
+  receiptId: z.string().uuid(),
+  taskId: SlugSchema,
+  repositorySha: z.string().regex(/^[a-f0-9]{40}$/),
+  skillAssetId: SlugSchema,
+  skillVersion: SemverSchema,
+  projectionHash: Sha256Schema,
+  taskHash: Sha256Schema,
+  results: z.array(LiveProviderBehaviorResultV1Schema),
+  allProvidersExecuted: z.boolean(),
+  sameSkill: z.boolean(),
+  sameProjection: z.boolean(),
+  behaviorallyConformant: z.boolean(),
+  createdAt: z.string().datetime({ offset: true }),
+}).strict();
+
 export type BehaviorConformanceTaskV1 = z.infer<typeof BehaviorConformanceTaskV1Schema>;
 export type BehaviorExecutionEvidenceV1 = z.infer<typeof BehaviorExecutionEvidenceV1Schema>;
 export type AgentBehaviorResultV1 = z.infer<typeof AgentBehaviorResultV1Schema>;
 export type AgentBehaviorConformanceReceiptV1 = z.infer<typeof AgentBehaviorConformanceReceiptV1Schema>;
+export type LiveProviderBehaviorResultV1 = z.infer<typeof LiveProviderBehaviorResultV1Schema>;
+export type LiveAgentBehaviorConformanceReceiptV1 = z.infer<typeof LiveAgentBehaviorConformanceReceiptV1Schema>;
 export type BehaviorAdapterId = z.infer<typeof BehaviorAdapterIdSchema>;

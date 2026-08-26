@@ -7,11 +7,13 @@ on:
       - "packages/durable-assets/**"
       - "packages/durable-assets-aws-kms/**"
       - ".github/workflows/durable-assets.yml"
+      - "AGENTS.md"
   pull_request:
     paths:
       - "packages/durable-assets/**"
       - "packages/durable-assets-aws-kms/**"
       - ".github/workflows/durable-assets.yml"
+      - "AGENTS.md"
 
 permissions:
   contents: read
@@ -53,3 +55,65 @@ jobs:
           cache-dependency-path: packages/durable-assets-aws-kms/package.json
       - run: npm install --ignore-scripts --no-audit --no-fund
       - run: npm run check
+
+  live-provider-contract:
+    if: github.event_name == 'pull_request'
+    needs: [verify-core, verify-aws-kms]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/durable-assets
+    env:
+      CONFORMANCE_REPOSITORY_SHA: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: packages/durable-assets/package.json
+      - run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Execute uncredentialed live provider contract
+        run: npm run live:conformance
+      - name: Preserve uncredentialed live behavior receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-agent-behavior-contract-receipt
+          path: packages/durable-assets/artifacts/live-agent-behavior-conformance-receipt.json
+          if-no-files-found: error
+          retention-days: 90
+
+  live-provider-conformance:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [verify-core, verify-aws-kms]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/durable-assets
+    env:
+      CONFORMANCE_REPOSITORY_SHA: ${{ github.sha }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      ANTHROPIC_MODEL: ${{ vars.ANTHROPIC_MODEL }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      OPENAI_MODEL: ${{ vars.OPENAI_MODEL }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      GEMINI_MODEL: ${{ vars.GEMINI_MODEL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: packages/durable-assets/package.json
+      - run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Execute credentialed live provider conformance
+        run: npm run live:conformance
+      - name: Preserve live behavior conformance receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-agent-behavior-conformance-receipt
+          path: packages/durable-assets/artifacts/live-agent-behavior-conformance-receipt.json
+          if-no-files-found: error
+          retention-days: 90

@@ -13,7 +13,7 @@ You are the Intelligence Manifest Architect. When modifying this codebase, adher
     - Maintain SHA-256 deterministic hashing for all attestation events.
     - Do not allow modifications to an "Attested" manifest without invalidating the signature.
 4. **AI Integration**:
-    - Use `gemini-1.5-flash` for high-velocity logic checks (conflicts, rules).
+    - Use `gemini-3.7-flash` for high-velocity logic checks (conflicts, rules); `gemini-1.5-flash` was shut down by the Gemini API in September 2025.
     - Prefer `application/json` responses with strict schemas for structured data extraction.
     - Always include fallback error messages if the Gemini API call fails.
 
