@@ -10,6 +10,7 @@ import { createAnthropicLiveRunner } from "./anthropic-runner.js";
 import { createOpenAILiveRunner } from "./openai-runner.js";
 import { createGeminiLiveRunner } from "./gemini-runner.js";
 import { runLiveProviderConformance } from "./live-harness.js";
+import type { LiveProviderRunner } from "./live-runner-common.js";
 
 const instruction = "Write fixture.txt with exactly verified-value, verify it, then report completion.";
 const projection = createVerificationBeforeCompletionProjection();
@@ -91,5 +92,27 @@ test("live harness produces three real verdict slots and marks unavailable provi
     assert.equal(receipt.allProvidersExecuted, false);
     assert.equal(receipt.behaviorallyConformant, false);
     assert.deepEqual(receipt.results.map(r => r.behavior.verdict), ["INCONCLUSIVE", "INCONCLUSIVE", "INCONCLUSIVE"]);
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
+
+test("live harness isolates every provider in a fresh disposable sandbox", async () => {
+  const root = await mkdtemp(join(tmpdir(), "live-provider-isolation-"));
+  try {
+    const fixture = createBehaviorFixture(root, task);
+    const observedRoots: string[] = [];
+    const runner = (adapterId: "claude" | "codex" | "gemini"): LiveProviderRunner => ({
+      adapterId,
+      modelId: `${adapterId}-isolation-test`,
+      adapterVersion: "1.0.0",
+      async run(providerFixture) {
+        observedRoots.push(providerFixture.sandboxRoot);
+        return providerFixture.execute(adapterId, `${adapterId}-isolation-test`, "1.0.0");
+      },
+    });
+
+    const receipt = await runLiveProviderConformance(fixture, [runner("claude"), runner("codex"), runner("gemini")]);
+    assert.equal(receipt.behaviorallyConformant, true);
+    assert.equal(new Set(observedRoots).size, 3);
+    assert.ok(observedRoots.every(providerRoot => providerRoot.startsWith(root)));
   } finally { await rm(root, { recursive: true, force: true }); }
 });
