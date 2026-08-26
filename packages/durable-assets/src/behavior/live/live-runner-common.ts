@@ -2,13 +2,12 @@ import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import {
   BehaviorExecutionEvidenceV1Schema,
-  type BehaviorActionV1Schema,
   type BehaviorAdapterId,
   type BehaviorExecutionEvidenceV1,
 } from "../contracts.v1.js";
 import type { BehaviorFixture } from "../fixtures/verification-before-completion.js";
 
-type BehaviorAction = typeof BehaviorActionV1Schema._output;
+type BehaviorAction = BehaviorExecutionEvidenceV1["actions"][number];
 
 export interface LiveRunnerConfig {
   apiKey: string | null;
