@@ -90,6 +90,6 @@ test("live harness produces three real verdict slots and marks unavailable provi
     assert.equal(receipt.schema, "LiveAgentBehaviorConformanceReceipt/v1");
     assert.equal(receipt.allProvidersExecuted, false);
     assert.equal(receipt.behaviorallyConformant, false);
-    assert.deepEqual(receipt.results.map(r => r.verdict), ["INCONCLUSIVE", "INCONCLUSIVE", "INCONCLUSIVE"]);
+    assert.deepEqual(receipt.results.map(r => r.behavior.verdict), ["INCONCLUSIVE", "INCONCLUSIVE", "INCONCLUSIVE"]);
   } finally { await rm(root, { recursive: true, force: true }); }
 });
