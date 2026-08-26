@@ -34,6 +34,18 @@ export async function runLiveProviderConformance(
 
     try {
       const evidence = await runner.run(providerFixture);
+      if (evidence.adapterId !== runner.adapterId || evidence.modelId !== runner.modelId) {
+        results.push({
+          adapterId: runner.adapterId,
+          modelId: runner.modelId,
+          status: "ERROR",
+          evidence: null,
+          evidenceHash: null,
+          behavior: inconclusive(runner.adapterId, runner.modelId, "PROVIDER_IDENTITY_MISMATCH"),
+        });
+        continue;
+      }
+
       evidenceContexts.push(evidence);
       results.push({
         adapterId: runner.adapterId,
