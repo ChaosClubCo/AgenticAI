@@ -68,9 +68,20 @@ export const LiveProviderBehaviorResultV1Schema = z.object({
   adapterId: BehaviorAdapterIdSchema,
   modelId: z.string().min(1),
   status: LiveProviderExecutionStatusSchema,
+  evidence: BehaviorExecutionEvidenceV1Schema.nullable(),
   evidenceHash: Sha256Schema.nullable(),
   behavior: AgentBehaviorResultV1Schema,
-}).strict();
+}).strict().superRefine((result, ctx) => {
+  if (result.status === "EXECUTED" && (result.evidence === null || result.evidenceHash === null)) {
+    ctx.addIssue({ code: "custom", path: ["evidence"], message: "Executed providers require normalized evidence and its hash." });
+  }
+  if (result.status !== "EXECUTED" && (result.evidence !== null || result.evidenceHash !== null)) {
+    ctx.addIssue({ code: "custom", path: ["evidence"], message: "Unavailable or errored providers cannot claim execution evidence." });
+  }
+  if (result.evidence && (result.evidence.adapterId !== result.adapterId || result.evidence.modelId !== result.modelId)) {
+    ctx.addIssue({ code: "custom", path: ["evidence"], message: "Provider identity must match normalized execution evidence." });
+  }
+});
 
 export const LiveAgentBehaviorConformanceReceiptV1Schema = z.object({
   schema: z.literal("LiveAgentBehaviorConformanceReceipt/v1"),
