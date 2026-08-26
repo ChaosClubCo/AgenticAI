@@ -33,7 +33,7 @@ const evidence = [
   },
 ] as const;
 
-function event(input: Omit<PromotionEventV1, "schema">): PromotionEventV1 {
+function event(input: Record<string, unknown>): PromotionEventV1 {
   return PromotionEventV1Schema.parse({ schema: "PromotionEvent/v1", ...input });
 }
 
@@ -51,18 +51,7 @@ test("real repeated verification rule promotes, tests, activates, and resolves i
       temporaryContext: false,
       proposedAssetType: "SKILL",
     })),
-    event({
-      eventId: "00000000-0000-4000-8000-000000000004",
-      occurredAt: "2026-08-25T18:01:00.000Z",
-      actorId: "durable-assets-operator-prod",
-      type: "ASSET_PROMOTED",
-      assetId,
-      patternId,
-      assetType: "SKILL",
-      version: "1.0.0",
-      canonicalPath: ".skills/verification-before-completion/SKILL.md",
-      description: "Require executed evidence before completion claims.",
-    }),
+    event({ eventId: "00000000-0000-4000-8000-000000000004", occurredAt: "2026-08-25T18:01:00.000Z", actorId: "durable-assets-operator-prod", type: "ASSET_PROMOTED", assetId, patternId, assetType: "SKILL", version: "1.0.0", canonicalPath: ".skills/verification-before-completion/SKILL.md", description: "Require executed evidence before completion claims." }),
     event({ eventId: "00000000-0000-4000-8000-000000000005", occurredAt: "2026-08-25T18:02:00.000Z", actorId: "conformance", type: "LIFECYCLE_TRANSITION_REQUESTED", assetId, to: "TESTED" }),
     event({ eventId: "00000000-0000-4000-8000-000000000006", occurredAt: "2026-08-25T18:03:00.000Z", actorId: "conformance", type: "ASSET_TEST_RECORDED", assetId, testId: "positive-trigger", testType: "POSITIVE_TRIGGER", status: "PASSED" }),
     event({ eventId: "00000000-0000-4000-8000-000000000007", occurredAt: "2026-08-25T18:04:00.000Z", actorId: "conformance", type: "ASSET_TEST_RECORDED", assetId, testId: "negative-trigger", testType: "NEGATIVE_TRIGGER", status: "PASSED" }),
@@ -93,7 +82,7 @@ test("real repeated verification rule promotes, tests, activates, and resolves i
     assert.ok(resolved.some(item => item.assetId === assetId && item.version === "1.0.0"));
     const reference = adapter.renderRegistryReference(projection.registry, projection.projectionHash);
     assert.match(reference, /verification-before-completion/);
-    assert.match(reference, new RegExp(projection.projectionHash.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+    assert.ok(reference.includes(projection.projectionHash));
   }
 
   const generatedRegistry = renderSkillRegistryProjection(projection.registry, projection.projectionHash);
