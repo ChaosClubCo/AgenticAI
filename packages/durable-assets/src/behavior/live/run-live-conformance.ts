@@ -29,8 +29,8 @@ const task = {
 const sandboxRoot = await mkdtemp(join(tmpdir(), "live-agent-behavior-"));
 try {
   const fixture = createBehaviorFixture(sandboxRoot, task);
-  const anthropicModel = env("ANTHROPIC_MODEL") ?? "unconfigured-anthropic-model";
-  const openAIModel = env("OPENAI_MODEL") ?? "unconfigured-openai-model";
+  const anthropicModel = env("ANTHROPIC_MODEL") ?? "claude-sonnet-5";
+  const openAIModel = env("OPENAI_MODEL") ?? "gpt-5.3-codex";
   const geminiModel = env("GEMINI_MODEL") ?? "gemini-3.7-flash";
   const anthropicKey = env("ANTHROPIC_API_KEY");
   const openAIKey = env("OPENAI_API_KEY");
@@ -38,11 +38,11 @@ try {
 
   const receipt = await runLiveProviderConformance(fixture, [
     createAnthropicLiveRunner({
-      apiKey: anthropicKey && env("ANTHROPIC_MODEL") ? anthropicKey : null,
+      apiKey: anthropicKey,
       model: anthropicModel,
     }),
     createOpenAILiveRunner({
-      apiKey: openAIKey && env("OPENAI_MODEL") ? openAIKey : null,
+      apiKey: openAIKey,
       model: openAIModel,
     }),
     createGeminiLiveRunner({
