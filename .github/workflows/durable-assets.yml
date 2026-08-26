@@ -31,6 +31,13 @@ jobs:
           cache-dependency-path: packages/durable-assets/package.json
       - run: npm install --ignore-scripts --no-audit --no-fund
       - run: npm run check
+      - name: Preserve behavior conformance receipt
+        uses: actions/upload-artifact@v4
+        with:
+          name: agent-behavior-conformance-receipt
+          path: packages/durable-assets/artifacts/behavior/verification-before-completion-sandbox-receipt.json
+          if-no-files-found: error
+          retention-days: 90
 
   verify-aws-kms:
     runs-on: ubuntu-latest
