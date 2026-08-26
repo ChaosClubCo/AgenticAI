@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import { sha256Text } from "../../integrity/canonical-hash.js";
+import { FileLiveBehaviorConformanceReceiptStore } from "../../persistence/behavior-conformance-receipt-store.js";
 import { createVerificationBeforeCompletionProjection } from "../fixtures/active-verification-skill.js";
 import { createBehaviorFixture } from "../fixtures/verification-before-completion.js";
 import { runLiveProviderConformance } from "./live-harness.js";
@@ -37,6 +38,11 @@ test("live receipt preserves normalized action evidence beside its evidence hash
     assert.ok(receipt.results.every(result => result.evidence !== null));
     assert.ok(receipt.results.every(result => result.evidenceHash !== null));
     assert.ok(receipt.results.every(result => result.evidence?.actions.map(action => action.kind).join(",") === "MUTATION,VERIFICATION,COMPLETION_CLAIM"));
+
+    const store = new FileLiveBehaviorConformanceReceiptStore(join(root, "receipts"));
+    await store.append(receipt);
+    assert.deepEqual(await store.list(), [receipt]);
+    await assert.rejects(() => store.append(receipt), /already exists/i);
   } finally {
     await rm(root, { recursive: true, force: true });
   }
