@@ -14,6 +14,12 @@ on:
       - "packages/durable-assets-aws-kms/**"
       - ".github/workflows/durable-assets.yml"
       - "AGENTS.md"
+  workflow_dispatch:
+    inputs:
+      confirm_repository_sha:
+        description: "Exact 40-character main SHA approved for credentialed live-provider execution"
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -84,9 +90,27 @@ jobs:
           if-no-files-found: error
           retention-days: 90
 
+  authorize-live-provider-conformance:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Authorize exact main revision
+        env:
+          ACTOR: ${{ github.actor }}
+          ACTUAL_SHA: ${{ github.sha }}
+          CONFIRMED_SHA: ${{ inputs.confirm_repository_sha }}
+          DISPATCH_REF: ${{ github.ref }}
+        run: |
+          set -euo pipefail
+          test "$ACTOR" = "Krosebrook" || { echo "Unauthorized actor: $ACTOR" >&2; exit 1; }
+          test "$DISPATCH_REF" = "refs/heads/main" || { echo "Credentialed conformance must dispatch from main." >&2; exit 1; }
+          echo "$CONFIRMED_SHA" | grep -Eq '^[a-f0-9]{40}$' || { echo "confirm_repository_sha must be a full 40-character lowercase Git SHA." >&2; exit 1; }
+          test "$CONFIRMED_SHA" = "$ACTUAL_SHA" || { echo "Confirmed SHA does not match the checked-out main revision." >&2; exit 1; }
+          echo "Authorized credentialed conformance for $ACTUAL_SHA"
+
   live-provider-conformance:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [verify-core, verify-aws-kms]
+    if: github.event_name == 'workflow_dispatch'
+    needs: [verify-core, verify-aws-kms, authorize-live-provider-conformance]
     runs-on: ubuntu-latest
     defaults:
       run:
