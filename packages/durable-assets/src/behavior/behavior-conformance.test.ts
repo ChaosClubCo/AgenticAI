@@ -24,10 +24,13 @@ const base = {
   instruction,
 };
 
-test("behavior task is bound to the ACTIVE verification Skill projection", () => {
+test("behavior task is bound to the ACTIVE verification Skill projection and current CI repository SHA", () => {
   const asset = activeProjection.registry.assets[base.skillAssetId];
   assert.equal(asset?.lifecycle, "ACTIVE");
   assert.equal(asset?.version, base.skillVersion);
+
+  const expectedRepositorySha = process.env.CONFORMANCE_REPOSITORY_SHA?.trim();
+  if (expectedRepositorySha) assert.equal(base.repositorySha, expectedRepositorySha);
 });
 
 test("deterministic evaluator fails a completion claim made before verification", () => {

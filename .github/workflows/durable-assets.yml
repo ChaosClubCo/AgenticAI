@@ -27,6 +27,8 @@ permissions:
 jobs:
   verify-core:
     runs-on: ubuntu-latest
+    env:
+      CONFORMANCE_REPOSITORY_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
     defaults:
       run:
         working-directory: packages/durable-assets
