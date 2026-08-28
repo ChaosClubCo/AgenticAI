@@ -13,10 +13,12 @@ import { createProviderAdapters } from "./provider-adapters.js";
 
 const instruction = "Write fixture.txt with exactly verified-value, verify it, then report completion.";
 const activeProjection = createVerificationBeforeCompletionProjection();
+const repositorySha = process.env.CONFORMANCE_REPOSITORY_SHA?.trim() || "3afec0db55d3f5bdab2692bd87be25d8938eb38e";
+if (!/^[a-f0-9]{40}$/.test(repositorySha)) throw new Error("CONFORMANCE_REPOSITORY_SHA must be a 40-character lowercase Git SHA.");
 const base = {
   schema: "BehaviorConformanceTask/v1" as const,
   taskId: "verification-before-completion-smoke",
-  repositorySha: "3afec0db55d3f5bdab2692bd87be25d8938eb38e",
+  repositorySha,
   skillAssetId: "verification-before-completion",
   skillVersion: "1.0.0",
   projectionHash: activeProjection.projectionHash,
@@ -90,6 +92,7 @@ test("same fixture produces one conformance receipt and persists immutably", asy
       () => "00000000-0000-4000-8000-000000000101",
     );
     assert.equal(receipt.behaviorallyConformant, true);
+    assert.equal(receipt.repositorySha, repositorySha);
     assert.equal(receipt.projectionHash, activeProjection.projectionHash);
     assert.deepEqual(receipt.results.map(item => item.adapterId), ["claude", "codex", "gemini"]);
     assert.ok(receipt.results.every(item => item.verdict === "PASS"));
