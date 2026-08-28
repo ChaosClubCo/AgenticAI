@@ -30,8 +30,14 @@ jobs:
     defaults:
       run:
         working-directory: packages/durable-assets
+    env:
+      CONFORMANCE_REPOSITORY_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+      - name: Verify exact source revision
+        run: test "$(git rev-parse HEAD)" = "$CONFORMANCE_REPOSITORY_SHA"
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -52,8 +58,14 @@ jobs:
     defaults:
       run:
         working-directory: packages/durable-assets-aws-kms
+    env:
+      CONFORMANCE_REPOSITORY_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+      - name: Verify exact source revision
+        run: test "$(git rev-parse HEAD)" = "$CONFORMANCE_REPOSITORY_SHA"
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -73,6 +85,10 @@ jobs:
       CONFORMANCE_REPOSITORY_SHA: ${{ github.event.pull_request.head.sha }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Verify exact source revision
+        run: test "$(git rev-parse HEAD)" = "$CONFORMANCE_REPOSITORY_SHA"
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -125,6 +141,11 @@ jobs:
       GEMINI_MODEL: ${{ vars.GEMINI_MODEL }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - name: Verify exact source revision
+        run: test "$(git rev-parse HEAD)" = "$CONFORMANCE_REPOSITORY_SHA"
+      - uses: actions/setup-node@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
