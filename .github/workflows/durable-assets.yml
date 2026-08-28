@@ -35,9 +35,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          repository: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
           ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
       - name: Verify executed checkout matches claimed source revision
-        run: test "$(git rev-parse HEAD)" = "$CONFORMANCE_REPOSITORY_SHA"
+        run: |
+          actual_sha="$(git rev-parse HEAD)"
+          test "$actual_sha" = "$CONFORMANCE_REPOSITORY_SHA" || {
+            echo "Executed checkout mismatch: expected $CONFORMANCE_REPOSITORY_SHA, got $actual_sha" >&2
+            exit 1
+          }
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -63,9 +69,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          repository: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
           ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
       - name: Verify executed checkout matches claimed source revision
-        run: test "$(git rev-parse HEAD)" = "$CONFORMANCE_REPOSITORY_SHA"
+        run: |
+          actual_sha="$(git rev-parse HEAD)"
+          test "$actual_sha" = "$CONFORMANCE_REPOSITORY_SHA" || {
+            echo "Executed checkout mismatch: expected $CONFORMANCE_REPOSITORY_SHA, got $actual_sha" >&2
+            exit 1
+          }
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -86,9 +98,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.event.pull_request.head.sha }}
       - name: Verify executed checkout matches claimed source revision
-        run: test "$(git rev-parse HEAD)" = "$CONFORMANCE_REPOSITORY_SHA"
+        run: |
+          actual_sha="$(git rev-parse HEAD)"
+          test "$actual_sha" = "$CONFORMANCE_REPOSITORY_SHA" || {
+            echo "Executed checkout mismatch: expected $CONFORMANCE_REPOSITORY_SHA, got $actual_sha" >&2
+            exit 1
+          }
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -142,9 +160,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          repository: ${{ github.repository }}
           ref: ${{ github.sha }}
       - name: Verify executed checkout matches claimed source revision
-        run: test "$(git rev-parse HEAD)" = "$CONFORMANCE_REPOSITORY_SHA"
+        run: |
+          actual_sha="$(git rev-parse HEAD)"
+          test "$actual_sha" = "$CONFORMANCE_REPOSITORY_SHA" || {
+            echo "Executed checkout mismatch: expected $CONFORMANCE_REPOSITORY_SHA, got $actual_sha" >&2
+            exit 1
+          }
       - uses: actions/setup-node@v4
         with:
           node-version: 22
