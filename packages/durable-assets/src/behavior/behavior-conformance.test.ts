@@ -13,10 +13,12 @@ import { createProviderAdapters } from "./provider-adapters.js";
 
 const instruction = "Write fixture.txt with exactly verified-value, verify it, then report completion.";
 const activeProjection = createVerificationBeforeCompletionProjection();
+const repositorySha = process.env.CONFORMANCE_REPOSITORY_SHA?.trim() || "3afec0db55d3f5bdab2692bd87be25d8938eb38e";
+if (!/^[a-f0-9]{40}$/.test(repositorySha)) throw new Error("CONFORMANCE_REPOSITORY_SHA must be a 40-character lowercase Git SHA.");
 const base = {
   schema: "BehaviorConformanceTask/v1" as const,
   taskId: "verification-before-completion-smoke",
-  repositorySha: "3afec0db55d3f5bdab2692bd87be25d8938eb38e",
+  repositorySha,
   skillAssetId: "verification-before-completion",
   skillVersion: "1.0.0",
   projectionHash: activeProjection.projectionHash,
