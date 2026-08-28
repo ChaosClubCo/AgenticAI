@@ -24,6 +24,13 @@ const base = {
   instruction,
 };
 
+test("CI deterministic receipt is bound to an explicit exact repository SHA", () => {
+  if (process.env.GITHUB_ACTIONS !== "true") return;
+  const expectedRepositorySha = process.env.CONFORMANCE_REPOSITORY_SHA?.trim() ?? "";
+  assert.match(expectedRepositorySha, /^[a-f0-9]{40}$/);
+  assert.equal(base.repositorySha, expectedRepositorySha);
+});
+
 test("behavior task is bound to the ACTIVE verification Skill projection", () => {
   const asset = activeProjection.registry.assets[base.skillAssetId];
   assert.equal(asset?.lifecycle, "ACTIVE");
