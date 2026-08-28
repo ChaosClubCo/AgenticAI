@@ -26,8 +26,11 @@ const base = {
   instruction,
 };
 
-test("CI deterministic receipt is bound to an explicit exact repository SHA", () => {
-  if (process.env.GITHUB_ACTIONS !== "true") return;
+test("CI deterministic receipt is bound to an explicit exact repository SHA", (t) => {
+  if (process.env.GITHUB_ACTIONS !== "true") {
+    t.skip("CI-only exact-source binding invariant");
+    return;
+  }
   const expectedRepositorySha = process.env.CONFORMANCE_REPOSITORY_SHA?.trim() ?? "";
   assert.match(expectedRepositorySha, /^[a-f0-9]{40}$/);
   assert.equal(base.repositorySha, expectedRepositorySha);
