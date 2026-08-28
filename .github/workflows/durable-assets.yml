@@ -28,12 +28,22 @@ jobs:
   verify-core:
     runs-on: ubuntu-latest
     env:
-      CONFORMANCE_REPOSITORY_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      CONFORMANCE_REPOSITORY_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
     defaults:
       run:
         working-directory: packages/durable-assets
     steps:
       - uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+      - name: Verify executed checkout matches claimed source revision
+        run: |
+          actual_sha="$(git rev-parse HEAD)"
+          test "$actual_sha" = "$CONFORMANCE_REPOSITORY_SHA" || {
+            echo "Executed checkout mismatch: expected $CONFORMANCE_REPOSITORY_SHA, got $actual_sha" >&2
+            exit 1
+          }
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -51,11 +61,23 @@ jobs:
 
   verify-aws-kms:
     runs-on: ubuntu-latest
+    env:
+      CONFORMANCE_REPOSITORY_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
     defaults:
       run:
         working-directory: packages/durable-assets-aws-kms
     steps:
       - uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+      - name: Verify executed checkout matches claimed source revision
+        run: |
+          actual_sha="$(git rev-parse HEAD)"
+          test "$actual_sha" = "$CONFORMANCE_REPOSITORY_SHA" || {
+            echo "Executed checkout mismatch: expected $CONFORMANCE_REPOSITORY_SHA, got $actual_sha" >&2
+            exit 1
+          }
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -68,13 +90,23 @@ jobs:
     if: github.event_name == 'pull_request'
     needs: [verify-core, verify-aws-kms]
     runs-on: ubuntu-latest
+    env:
+      CONFORMANCE_REPOSITORY_SHA: ${{ github.event.pull_request.head.sha }}
     defaults:
       run:
         working-directory: packages/durable-assets
-    env:
-      CONFORMANCE_REPOSITORY_SHA: ${{ github.event.pull_request.head.sha }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Verify executed checkout matches claimed source revision
+        run: |
+          actual_sha="$(git rev-parse HEAD)"
+          test "$actual_sha" = "$CONFORMANCE_REPOSITORY_SHA" || {
+            echo "Executed checkout mismatch: expected $CONFORMANCE_REPOSITORY_SHA, got $actual_sha" >&2
+            exit 1
+          }
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -114,9 +146,6 @@ jobs:
     if: github.event_name == 'workflow_dispatch'
     needs: [verify-core, verify-aws-kms, authorize-live-provider-conformance]
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: packages/durable-assets
     env:
       CONFORMANCE_REPOSITORY_SHA: ${{ github.sha }}
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -125,8 +154,21 @@ jobs:
       OPENAI_MODEL: ${{ vars.OPENAI_MODEL }}
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       GEMINI_MODEL: ${{ vars.GEMINI_MODEL }}
+    defaults:
+      run:
+        working-directory: packages/durable-assets
     steps:
       - uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{ github.sha }}
+      - name: Verify executed checkout matches claimed source revision
+        run: |
+          actual_sha="$(git rev-parse HEAD)"
+          test "$actual_sha" = "$CONFORMANCE_REPOSITORY_SHA" || {
+            echo "Executed checkout mismatch: expected $CONFORMANCE_REPOSITORY_SHA, got $actual_sha" >&2
+            exit 1
+          }
       - uses: actions/setup-node@v4
         with:
           node-version: 22
